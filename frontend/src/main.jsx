@@ -9,7 +9,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/domain/:slug" element={<Flashcards />} />
+        <Route path="/flashcards/:slug" element={<Flashcards />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

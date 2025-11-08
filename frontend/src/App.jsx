@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+import { fetchDomains } from "./utils/cache";
 
 // 🎨 individual color palette
 const domainColors = {
@@ -55,11 +54,24 @@ export default function App() {
   const [domains, setDomains] = useState([]);
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    fetch(`${BACKEND_URL}/domains`)
-      .then((res) => res.json())
-      .then((data) => setDomains(data))
-      .catch((err) => console.error("Error fetching domains:", err));
+    async function loadDomains() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchDomains();
+        setDomains(data);
+      } catch (err) {
+        console.error("Error fetching domains:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDomains();
   }, []);
 
   return (
@@ -71,7 +83,62 @@ export default function App() {
       }}
     >
       <h1 style={{ fontSize: "2rem" }}>🌍 Multilang Flashcards</h1>
-      <p style={{ opacity: 0.8 }}>Choose a category:</p>
+      
+      {error && (
+        <div style={{ color: "#e53935", margin: "2rem 0" }}>
+          <p>😕 Error loading categories: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "0.5rem 1rem",
+              borderRadius: "0.5rem",
+              border: "1px solid #ccc",
+              background: "white",
+              cursor: "pointer",
+              marginTop: "1rem"
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ margin: "2rem 0" }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            flexWrap: "wrap",
+            gap: "1.5rem",
+            marginTop: "2rem",
+          }}>
+            {/* Loading skeleton for categories */}
+            {[1,2,3,4].map(n => (
+              <div
+                key={n}
+                style={{
+                  padding: "2rem 3rem",
+                  borderRadius: "1rem",
+                  backgroundColor: "#f0f0f0",
+                  minWidth: "180px",
+                  animation: "pulse 1.5s infinite",
+                }}
+              >
+                <div style={{ height: "1.3rem", width: "100%" }} />
+              </div>
+            ))}
+          </div>
+          <style>{`
+            @keyframes pulse {
+              0% { opacity: 1; }
+              50% { opacity: 0.5; }
+              100% { opacity: 1; }
+            }
+          `}</style>
+        </div>
+      ) : (
+        <p style={{ opacity: 0.8 }}>Choose a category:</p>
+      )}
 
       <div
         style={{

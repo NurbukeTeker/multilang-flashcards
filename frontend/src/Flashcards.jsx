@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+import { fetchDomains, fetchTerms } from "./utils/cache";
 
 export default function Flashcards() {
   const { slug } = useParams();
@@ -11,66 +10,217 @@ export default function Flashcards() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [score, setScore] = useState({ correct: 0, wrong: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // fetch domain terms
-    fetch(`${BACKEND_URL}/domains`)
-      .then((res) => res.json())
-      .then((domains) => {
+    async function loadTerms() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const domains = await fetchDomains();
         const domain = domains.find((d) => d.slug === slug);
-        if (domain) setTerms(domain.terms);
-      });
-  }, [slug]);
+
+        if (!domain) throw new Error(`Domain "${slug}" not found`);
+
+        const terms = await fetchTerms(domain.id);
+        setTerms(terms);
+      } catch (err) {
+        console.error("Error loading terms:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadTerms();
+  }, [slug, navigate]);
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "4rem", fontFamily: "sans-serif" }}>
+        <div style={{ marginBottom: "2rem" }}>
+          <div
+            style={{
+              width: "300px",
+              height: "200px",
+              margin: "0 auto",
+              backgroundColor: "#f0f0f0",
+              borderRadius: "1rem",
+              animation: "pulse 1.5s infinite",
+              marginBottom: "1rem",
+            }}
+          >
+            <style>{`
+              @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.5; }
+                100% { opacity: 1; }
+              }
+            `}</style>
+          </div>
+          <p>Loading flashcards...</p>
+        </div>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "0.5rem",
+            border: "1px solid #ccc",
+            background: "white",
+            cursor: "pointer",
+          }}
+        >
+          ← Back to home
+        </button>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "4rem",
+          fontFamily: "sans-serif",
+          color: "#e53935",
+        }}
+      >
+        <h2>😕 Oops!</h2>
+        <p>{error}</p>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "0.5rem",
+            border: "1px solid #ccc",
+            background: "white",
+            cursor: "pointer",
+            marginTop: "1rem",
+          }}
+        >
+          ← Back to home
+        </button>
+      </div>
+    );
+  }
 
   if (terms.length === 0) {
     return (
-      <div style={{ textAlign: "center", marginTop: "4rem" }}>
-        <p>Loading terms...</p>
-        <button onClick={() => navigate("/")}>← Back to home</button>
+      <div style={{ textAlign: "center", marginTop: "4rem", fontFamily: "sans-serif" }}>
+        <h2>No flashcards found</h2>
+        <p>This category doesn't have any terms yet.</p>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "0.5rem",
+            border: "1px solid #ccc",
+            background: "white",
+            cursor: "pointer",
+            marginTop: "1rem",
+          }}
+        >
+          ← Back to home
+        </button>
       </div>
     );
   }
 
   const current = terms[currentIndex];
-
   const total = terms.length;
   const answered = score.correct + score.wrong;
   const progress = Math.round((answered / total) * 100);
 
   const handleAnswer = (knewIt) => {
-    // if user didn’t know, push the card again at the end
-    if (!knewIt) {
-      setTerms((prev) => [...prev, prev[currentIndex]]);
-    }
-
-    // update score
+    if (!knewIt) setTerms((prev) => [...prev, prev[currentIndex]]);
     setScore((prev) => ({
       correct: prev.correct + (knewIt ? 1 : 0),
       wrong: prev.wrong + (!knewIt ? 1 : 0),
     }));
-
-    // move to next
     setFlipped(false);
     setCurrentIndex((prev) => prev + 1);
   };
 
+  // ✅ Modern, clean "Session Complete" layout
   if (currentIndex >= terms.length) {
+    const accuracy = Math.round((score.correct / (score.correct + score.wrong)) * 100) || 0;
+
     return (
-      <div style={{ textAlign: "center", marginTop: "4rem" }}>
-        <h1>✅ Session Complete!</h1>
-        <p>
-          Correct: {score.correct} / Wrong: {score.wrong} ({progress}%)
-        </p>
-        <button onClick={() => navigate("/")}>Back to Home</button>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "sans-serif",
+          background: "linear-gradient(135deg, #f9fafc 0%, #f2f4f7 100%)",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "1.5rem",
+            padding: "3rem 4rem",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+            textAlign: "center",
+            maxWidth: "400px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "2rem",
+              marginBottom: "1rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+            }}
+          >
+            ✅ <span>Session Complete!</span>
+          </h1>
+
+          <p
+            style={{
+              fontSize: "1.1rem",
+              color: "#333",
+              marginBottom: "2rem",
+            }}
+          >
+            Correct: <b>{score.correct}</b> / Wrong: <b>{score.wrong}</b> ({accuracy}%)
+          </p>
+
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              padding: "0.8rem 1.6rem",
+              fontSize: "1rem",
+              borderRadius: "8px",
+              border: "none",
+              backgroundColor: "#4CAF50",
+              color: "#fff",
+              cursor: "pointer",
+              transition: "all 0.2s ease-in-out",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#45a049")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#4CAF50")}
+          >
+            ← Back to Home
+          </button>
+        </div>
       </div>
     );
   }
 
+  // Default flashcard view
   return (
     <div style={{ textAlign: "center", marginTop: "4rem", fontFamily: "sans-serif" }}>
       <h1>{slug.toUpperCase()}</h1>
 
-      {/* progress bar */}
+      {/* Progress Bar */}
       <div
         style={{
           width: "300px",
@@ -156,7 +306,7 @@ export default function Flashcards() {
         </div>
       </div>
 
-      {/* Action buttons */}
+      {/* Buttons */}
       <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
         <button
           onClick={() => handleAnswer(true)}
@@ -186,7 +336,6 @@ export default function Flashcards() {
         </button>
       </div>
 
-      {/* Score summary */}
       <p style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
         ✅ {score.correct} | ❌ {score.wrong}
       </p>
