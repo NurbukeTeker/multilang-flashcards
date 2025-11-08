@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  backend:
+    build: ./backend
+    container_name: ${PROJECT_NAME}_backend
+    ports:
+      - "${BACKEND_PORT}:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    networks:
+      - flashcards_net
+
+  frontend:
+    build: ./frontend
+    container_name: ${PROJECT_NAME}_frontend
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    networks:
+      - flashcards_net
+
+networks:
+  flashcards_net:
+    driver: bridge
