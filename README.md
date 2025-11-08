@@ -71,30 +71,32 @@ After all cards are answered, the user sees their **session summary** with corre
 
 ## 🧩 Project Structure
 
+```plaintext
 multilang-flashcards/
 │
 ├── backend/
-│ ├── main.py # FastAPI entrypoint
-│ ├── models.py # SQLAlchemy models (Domain, Term)
-│ ├── schemas.py # Pydantic schemas
-│ ├── crud.py # CRUD operations
-│ ├── database.py # DB engine + session
-│ ├── seed_data.py # Preloads 20 categories × 20 terms
-│ └── wordcards.db # Auto-generated SQLite database
+│   ├── main.py              # FastAPI entrypoint
+│   ├── models.py            # SQLAlchemy models (Domain, Term)
+│   ├── schemas.py           # Pydantic schemas
+│   ├── crud.py              # CRUD operations
+│   ├── database.py          # DB engine + session
+│   ├── seed_data.py         # Preloads 20 categories × 20 terms
+│   └── wordcards.db         # Auto-generated SQLite database
 │
 ├── frontend/
-│ ├── src/
-│ │ ├── App.jsx # Home screen with categories
-│ │ ├── Flashcards.jsx # Card logic + scoring
-│ │ └── utils/cache.js # Cached fetch helpers
-│ └── .env # Backend URL config
+│   ├── src/
+│   │   ├── App.jsx          # Home screen with categories
+│   │   ├── Flashcards.jsx   # Card logic + scoring
+│   │   └── utils/cache.js   # Cached fetch helpers
+│   └── .env                 # Backend URL config
 │
 └── figures/
-├── mainpage.png
-├── flashcard.png
-├── flashcard_back.png
-└── result.png
+    ├── mainpage.png
+    ├── flashcard.png
+    ├── flashcard_back.png
+    └── result.png
 
+```
 
 ---
 
